@@ -3,86 +3,57 @@ package;
 import flixel.*;
 import flixel.util.*;
 import flixel.math.*;
-import flixel.tile.FlxTilemap;
+import flixel.addons.editors.tiled.*;
+import flixel.tile.*;
+import flixel.tile.FlxBaseTilemap;
 import flixel.ui.FlxButton;
 class PlayState extends FlxState{
 
-	static inline var TILE_WIDTH:Int = 24;
-	static inline var TILE_HEIGHT:Int = 24;
+	static inline var TILE_WIDTH:Int = 100;
+	static inline var TILE_HEIGHT:Int = 72;
 
-	var _map:FlxTilemap;
+	var _map:TiledMap;
+	var _blocks:FlxTilemap;
 	var _player:Carro;
 	var _inimigos:Array<Carro> = [];
 	var _btnBack:FlxButton;
-	var _enemyPath:Array<FlxPoint> = [];
+	var _enemyPath:Array<Array<FlxPoint>> = [];
 
 	override public function create():Void{
-		FlxG.cameras.bgColor = 0xff626b61;
-		_map = new FlxTilemap();
-		_map.loadMapFromCSV("assets/tracks/Road.csv", "assets/images/Road.png", TILE_WIDTH, TILE_HEIGHT, 0, 0);
+		FlxG.cameras.bgColor = 0xff000000;
+		_map = new TiledMap(AssetPaths.please__tmx);
+		_blocks = new FlxTilemap();
+		_blocks.loadMapFromArray(cast(_map.getLayer("blocks"), TiledTileLayer).tileArray, _map.width, _map.height, AssetPaths.Road__png, _map.tileWidth, _map.tileHeight, FlxTilemapAutoTiling.OFF, 1, 0, 2);
+		_blocks.follow();
+		_blocks.setTileProperties(1, FlxObject.NONE);
+		_blocks.setTileProperties(2, FlxObject.ANY);
+		add(_blocks);
+		/*_map = new FlxTilemap();
+		_map.loadMapFromCSV("assets/tracks/pathfinding_map.txt", "assets/images/city.png", TILE_WIDTH, TILE_HEIGHT, 0, 0);
 		add(_map);
 
+		_blocks = new FlxTilemap();
+		_blocks.loadMapFromCSV("assets/tracks/blocks.csv", "assets/images/Road.png", 24, 24, 0, 0);
+		_blocks.setTileProperties(1, FlxObject.ANY);
+		add(_blocks);*/
+
 		_player = new Carro(AssetPaths.red_vehicle__png);
-		_player.x = TILE_WIDTH * 23;
-		_player.y = TILE_HEIGHT * 17;
+		_player.x = 24 * 23;
+		_player.y = 24 * 17;
 		add(_player);
 
-		#if sys
-		var content:String = sys.io.File.getContent('assets/tracks/Road_path.txt');
-		#else
-		var content:String = "565,196
-562,86
-495,87
-494,173
-514,186
-516,292
-378,301
-375,343
-397,358
-385,373
-307,371
-294,351
-255,346
-252,184
-440,178
-444,68
-60,60
-64,201
-175,207
-176,249
-64,257
-60,340
-150,352
-151,368
-62,377
-64,515
-151,518
-160,534
-246,536
-255,424
-485,417
-487,469
-377,467
-378,510
-487,516
-500,536
-559,538
-562,195
-";
-		#end
-		var pathXY:Array<String> = content.split('\n');
-		for(point in pathXY){
-			var pt:Array<String> = point.split(',');
-			var _pt:FlxPoint = new FlxPoint(Std.parseInt(pt[0]), Std.parseInt(pt[1]));
-			_enemyPath.push(_pt);
-		}
-
-		for(i in 0...5 ){
+		for(i in 0...2 ){
+			var path:Array<FlxPoint> = [];
+			for(point in 0...40){
+				var _pt:FlxPoint = new FlxPoint(FlxG.random.int(20, 650), FlxG.random.int(70, 550));
+				path.push(_pt);
+			}
+			_enemyPath.push(path);
 			var _car:Carro = new Carro(AssetPaths.yellow_vehicle__png);
-			_car.x = TILE_WIDTH * (23);
-			_car.y = TILE_HEIGHT * (9 + i);
-			_car.maxVelocity.x = _car.maxVelocity.y = 10;
-			_car.path = new FlxPath().start(_enemyPath, 200, FlxPath.LOOP_FORWARD);
+			_car.x = 24 * (23);
+			_car.y = 24 * (9 + i);
+			_car.velocity.x = _car.velocity.y = 1;
+			_car.path = new FlxPath().start(_enemyPath[i], 200, FlxPath.LOOP_FORWARD);
 			add(_car);
 			_inimigos.push(_car);
 		}
@@ -96,8 +67,17 @@ class PlayState extends FlxState{
 	}
 
 	override public function update(elapsed:Float):Void{
-		_player.stop();
+		FlxG.collide(_player, _blocks);
+		//var overlapping = FlxG.pixelPerfectOverlap(_jogador, _tiro);
+		for(i in 0...2){
+			_inimigos[i].updateEm();
+			FlxG.collide(_inimigos[i], _blocks);
+			//FlxG.collide(_inimigos[i], _player);
+		}
+		//var overlapping = _map.overlapsWithCallback(_player);
+
 		//FlxG.collide(_player, _map);
+		//FlxG.collide(_player, _blocks);
 
         if(FlxG.keys.pressed.D){
 			_player.D();
@@ -114,9 +94,14 @@ class PlayState extends FlxState{
         if(FlxG.keys.pressed.S){
 			_player.S();
         }
+
 		if(FlxG.keys.pressed.R){
             playerReset();
         }
+
+		/*if(FlxG.keys.anyJustReleased([W, A, S, D])){
+			_player.animation.stop();
+		}*/
 
 		if(FlxG.mouse.justPressed){
 			FlxG.log.add(FlxG.mouse.screenX + " - " + FlxG.mouse.screenY);
@@ -126,8 +111,8 @@ class PlayState extends FlxState{
 	}
 
 	function playerReset():Void{
-		_player.x = TILE_WIDTH * 23;
-		_player.y = TILE_WIDTH * 9;
+		_player.x = 24 * 23;
+		_player.y = 24 * 9;
 		_player.velocity.x = _player.velocity.y = 0;
 		_player.acceleration.x = _player.acceleration.y = 0;
 		_player.animation.play("walkU");		

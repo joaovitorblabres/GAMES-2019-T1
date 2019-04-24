@@ -1,18 +1,17 @@
 package;
 
 import flixel.*;
-import flixel.system.*;
 
 class Carro extends Entidade{
+    static var moving:Int = 2;
     public function new(path:String){
         super();
         health = 10;
 
 		this.acceleration.x = this.acceleration.y = 0;
-		this.scale.set(0.35, 0.35);
 		this.setFacingFlip(FlxObject.LEFT, true, false);
         this.setFacingFlip(FlxObject.RIGHT, false, false);
-		this.loadGraphic(path, true, 32, 32);
+		this.loadGraphic(path, true, 20, 20);
 		this.animation.add("walkR", [5], 8);
         this.animation.add("walkRD", [6], 8);
         this.animation.add("walkRU", [4], 8);
@@ -21,8 +20,16 @@ class Carro extends Entidade{
         this.animation.add("walkLU", [2], 8);
         this.animation.add("walkU", [3], 8);
         this.animation.add("walkD", [7], 8);
-		this.animation.play("walkU");
+		this.animation.play("walkD");
         this.facing = FlxObject.RIGHT;
+    }
+
+    public function updateEm():Void{
+        checkR();
+        checkL();
+        checkU();
+        checkD();
+               
     }
 
     override function onMessage(m:Mensagem):Void{
@@ -40,15 +47,26 @@ class Carro extends Entidade{
     }
 
     public function D(){
-        this.facing = FlxObject.RIGHT;
-        if(this.acceleration.x < 2)
-            this.acceleration.x += 0.3;
-        
-        if(this.velocity.x < 0)
-            this.velocity.x += 1;
-        else
-            this.velocity.x += 0.3;
+        this.velocity.x += moving;
+        this.animation.play("walkR");
+    }
 
+    public function A(){
+        this.velocity.x -= moving;
+        this.animation.play("walkL");
+    }
+
+    public function W(){
+        this.velocity.y -= moving;
+        this.animation.play("walkU");
+    }
+
+    public function S(){
+        this.velocity.y += moving;
+        this.animation.play("walkD");
+    }
+
+    function checkR(){
         if(this.velocity.x > 0 && this.velocity.y < 0)
             this.animation.play("walkRU");
         else if(this.velocity.x > 0 && this.velocity.y > 0)
@@ -57,15 +75,7 @@ class Carro extends Entidade{
             this.animation.play("walkR");
     }
 
-    public function A(){
-        if(this.acceleration.x > -2)
-            this.acceleration.x -= 0.3;
-        
-        if(this.velocity.x > 0)
-            this.velocity.x -= 1;
-        else
-            this.velocity.x -= 0.3;
-
+    function checkL(){
         if(this.velocity.x < 0 && this.velocity.y < 0)
             this.animation.play("walkLU");
         else if(this.velocity.x < 0 && this.velocity.y > 0)
@@ -74,15 +84,7 @@ class Carro extends Entidade{
             this.animation.play("walkL");
     }
 
-    public function W(){
-        if(this.acceleration.y > -2)
-            this.acceleration.y -= 0.3;
-        
-        if(this.velocity.y > 0)
-            this.velocity.y -= 1;
-        else
-            this.velocity.y -= 0.3;
-
+    function checkU(){
         if(this.velocity.x < 0 && this.velocity.y < 0)
             this.animation.play("walkLU");
         else if(this.velocity.x > 0 && this.velocity.y < 0)
@@ -91,15 +93,7 @@ class Carro extends Entidade{
             this.animation.play("walkU");
     }
 
-    public function S(){
-        if(this.acceleration.y < 2)
-            this.acceleration.y += 0.3;
-        
-        if(this.velocity.y < 0)
-            this.velocity.y += 1;
-        else
-            this.velocity.y += 0.3;
-
+    function checkD(){
         if(this.velocity.x < 0 && this.velocity.y > 0)
             this.animation.play("walkLD");
         else if(this.velocity.x > 0 && this.velocity.y > 0)
@@ -108,23 +102,4 @@ class Carro extends Entidade{
             this.animation.play("walkD");
     }
 
-    public function stop(){
-        if(this.velocity.y < 0.1 && this.velocity.y > -0.1)
-            this.velocity.y = 0;
-
-        if(this.velocity.x < 0.1 && this.velocity.x > -0.1)
-            this.velocity.x = 0;
-        
-        if(this.velocity.y > 0)
-			this.velocity.y -= 0.1;
-		if(this.velocity.y < 0)
-			this.velocity.y += 0.1;
-		
-		if(this.velocity.x > 0)
-			this.velocity.x -= 0.1;
-		if(this.velocity.x < 0)
-			this.velocity.x += 0.1;
-		
-		this.animation.stop();
-    }
 }
