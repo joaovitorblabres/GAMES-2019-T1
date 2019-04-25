@@ -1,10 +1,17 @@
 package;
 
 import flixel.*;
+import flixel.math.*;
+import flixel.group.FlxGroup;
 
 class Carro extends Entidade{
     static var moving:Int = 2;
-    public function new(path:String){
+    public var municao:Int = 20;
+    var _balas = new FlxTypedGroup<Bala>();
+    var _velocity:FlxVector = new FlxVector();
+    public var tirou:Int = 0;
+
+    public function new(path:String, bullets:FlxTypedGroup<Bala>){
         super();
         health = 10;
 
@@ -22,6 +29,7 @@ class Carro extends Entidade{
         this.animation.add("walkD", [7], 8);
 		this.animation.play("walkD");
         this.facing = FlxObject.RIGHT;
+        _balas = bullets;
     }
 
     public function updateEm():Void{
@@ -84,19 +92,22 @@ class Carro extends Entidade{
             this.animation.play("walkLU");
     }
 
-    function checkL(){
-        if(this.velocity.x <= 0)
-            this.animation.play("walkL");
-    }
-
-    function checkU(){
-        if(this.velocity.y <= 0)
-            this.animation.play("walkU");
-    }
-
-    function checkD(){
-        if(this.velocity.y >= 0)
-            this.animation.play("walkD");
+    public function tirao(X:Int, Y:Int):Void{
+        var b:Bala = _balas.getFirstAvailable();
+        //FlxG.log.add("PIU");
+        if(b != null){
+//            b.scale.set(0.1,0.1);
+            b.reset(this.x, this.y);
+            _velocity.x = X - this.x;
+            _velocity.y = Y - this.y;
+            _velocity.normalize();
+            _velocity.scale(300);
+            b.velocity.x = _velocity.x;
+            b.velocity.y = _velocity.y;
+            this.municao--;
+            //b.animation.play("poof");
+            //b.scale.set(0.1,0.1);
+        }
     }
 
 }

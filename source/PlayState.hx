@@ -5,40 +5,37 @@ import flixel.util.*;
 import flixel.math.*;
 import flixel.addons.editors.tiled.*;
 import flixel.tile.*;
+import flixel.group.FlxGroup;
 import flixel.tile.FlxBaseTilemap;
 import flixel.ui.FlxButton;
 class PlayState extends FlxState{
 
 	static inline var TILE_WIDTH:Int = 100;
 	static inline var TILE_HEIGHT:Int = 72;
+	static inline var QTD_INI:Int = 3;
 
 	var _map:TiledMap;
 	var _blocks:FlxTilemap;
+	var _city:FlxTilemap;
 	var _player:Carro;
 	var _inimigos:Array<Carro> = [];
+	var _bullets:FlxTypedGroup<Bala>;
+	var _enemyBullets:FlxTypedGroup<Bala>;
 	var _btnBack:FlxButton;
 	var _enemyPath:Array<Array<FlxPoint>> = [];
+	var _counter:Float = 0;
 
 	override public function create():Void{
 		FlxG.cameras.bgColor = 0xff000000;
-		_map = new TiledMap(AssetPaths.please__tmx);
+		_map = new TiledMap(AssetPaths.trabalho__tmx);
 		_blocks = new FlxTilemap();
-		_blocks.loadMapFromArray(cast(_map.getLayer("blocks"), TiledTileLayer).tileArray, _map.width, _map.height, AssetPaths.Road__png, _map.tileWidth, _map.tileHeight, FlxTilemapAutoTiling.OFF, 1, 0, 2);
+		_blocks.loadMapFromArray(cast(_map.getLayer("blocks"), TiledTileLayer).tileArray, _map.width, _map.height, AssetPaths.city__png, _map.tileWidth, _map.tileHeight, FlxTilemapAutoTiling.OFF, 1, 0, 2);
 		//_blocks.follow();
-		_blocks.setTileProperties(1, FlxObject.NONE);
-		_blocks.setTileProperties(2, FlxObject.ANY);
-		_blocks.setPosition(0,0);
+		_blocks.setTileProperties(36, FlxObject.NONE);
+		_blocks.setTileProperties(18, FlxObject.ANY);
 		add(_blocks);
-		/*_map = new FlxTilemap();
-		_map.loadMapFromCSV("assets/tracks/pathfinding_map.txt", "assets/images/city.png", TILE_WIDTH, TILE_HEIGHT, 0, 0);
-		add(_map);
-
-		_blocks = new FlxTilemap();
-		_blocks.loadMapFromCSV("assets/tracks/blocks.csv", "assets/images/Road.png", 24, 24, 0, 0);
-		_blocks.setTileProperties(1, FlxObject.ANY);
-		add(_blocks);*/
-
-		_player = new Carro(AssetPaths.red_vehicle__png);
+		_bullets = new FlxTypedGroup<Bala>(200);
+		_player = new Carro(AssetPaths.red_vehicle__png, _bullets);
 		_player.x = 24 * 23;
 		_player.y = 24 * 17;
 		add(_player);
@@ -61,12 +58,18 @@ class PlayState extends FlxState{
 			path.push(_pt);
 		}
 
-		for(i in 0...3 ){
+        for(i in 0...200){
+            var s = new Bala();
+            s.kill();
+            _bullets.add(s);
+        }
+
+		for( i in 0...QTD_INI ){
 			_enemyPath.push(path);
-			var _car:Carro = new Carro(AssetPaths.green_vehicle__png);
+			_enemyBullets = new FlxTypedGroup<Bala>(1000);
+			var _car:Carro = new Carro(AssetPaths.yellow_vehicle__png, _enemyBullets);
 			_car.x = path[0].x + i*30;
 			_car.y = path[0].y + i;
-			_car.velocity.x = _car.velocity.y = 1;
 			if(i%2 == 0)
 				_car.path = new FlxPath().start(_enemyPath[i], 200, FlxPath.LOOP_FORWARD);
 			else
@@ -75,22 +78,42 @@ class PlayState extends FlxState{
 			add(_car);
 			_inimigos.push(_car);
 		}
+
+		for(i in 0...1000){
+            var s = new Bala();
+            s.kill();
+            _enemyBullets.add(s);
+        }
 		
 		_btnBack = new FlxButton(0, 0, "Voltar", goBack);
         _btnBack.x = (FlxG.width)-(_btnBack.width)-5;
         _btnBack.y = FlxG.height - _btnBack.height - 10;
 		add(_btnBack);
+		add(_bullets);
+		add(_enemyBullets);
 		super.create();
 
 	}
 
 	override public function update(elapsed:Float):Void{
+		_counter += elapsed;
+		for(i in 0...QTD_INI){
+			if(((Math.floor(_counter) + 1) % (i+2)) == 0 && _inimigos[i].tirou == 0){
+				_inimigos[i].tirao(Std.int(_player.x), Std.int(_player.y));
+				_inimigos[i].tirou = 1;
+			}
+		}
+		if(Math.floor(_counter) % 10 == 0){
+			for(i in 0...QTD_INI){
+				_inimigos[i].tirou = 0;
+			}
+		}
 		FlxG.collide(_player, _blocks);
 		//var overlapping = FlxG.pixelPerfectOverlap(_jogador, _tiro);
-		for(i in 0...3){
+		for(i in 0...QTD_INI){
 			_inimigos[i].updateEm();
 			FlxG.collide(_inimigos[i], _blocks);
-			//FlxG.collide(_inimigos[i], _player);
+			FlxG.collide(_inimigos[i], _player);
 		}
 		//var overlapping = _map.overlapsWithCallback(_player);
 
@@ -121,8 +144,9 @@ class PlayState extends FlxState{
 			_player.animation.stop();
 		}*/
 
-		if(FlxG.mouse.justPressed){
-			
+		if(FlxG.mouse.justPressed && _player.municao > 0){
+			_player.tirao(FlxG.mouse.screenX, FlxG.mouse.screenY);
+			FlxG.log.add("PIUPIU");
 		}
 		super.update(elapsed);
 
