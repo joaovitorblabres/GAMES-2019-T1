@@ -12,9 +12,9 @@ class Carro extends Entidade{
 		this.setFacingFlip(FlxObject.LEFT, true, false);
         this.setFacingFlip(FlxObject.RIGHT, false, false);
 		this.loadGraphic(path, true, 20, 20);
-		this.animation.add("walkR", [5], 8);
         this.animation.add("walkRD", [6], 8);
         this.animation.add("walkRU", [4], 8);
+		this.animation.add("walkR", [5], 8);
         this.animation.add("walkL", [1], 8);
         this.animation.add("walkLD", [0], 8);
         this.animation.add("walkLU", [2], 8);
@@ -25,11 +25,7 @@ class Carro extends Entidade{
     }
 
     public function updateEm():Void{
-        checkR();
-        checkL();
-        checkU();
-        checkD();
-               
+        checkAngle();              
     }
 
     override function onMessage(m:Mensagem):Void{
@@ -66,39 +62,40 @@ class Carro extends Entidade{
         this.animation.play("walkD");
     }
 
-    function checkR(){
-        if(this.velocity.x > 0 && this.velocity.y < 0)
+    function checkAngle(){
+        //FlxG.log.add(this.path.angle);
+        if(this.path.angle > 170 && this.path.angle <= -170)
+            this.animation.play("walkD");
+        else
+            this.animation.play("walkD");
+        if(this.path.angle > -20 && this.path.angle <= 20)
+            this.animation.play("walkU");
+        if(this.path.angle > 20 && this.path.angle <= 70)
             this.animation.play("walkRU");
-        else if(this.velocity.x > 0 && this.velocity.y > 0)
-            this.animation.play("walkRD");
-        else if(this.velocity.x >= 0)
+        if(this.path.angle > 70 && this.path.angle <= 110)
             this.animation.play("walkR");
+        if(this.path.angle > 110 && this.path.angle <= 170)
+            this.animation.play("walkRD");
+        if(this.path.angle > -170 && this.path.angle <= -110)
+            this.animation.play("walkLD");
+        if(this.path.angle > -110 && this.path.angle <= -70)
+            this.animation.play("walkL");
+        if(this.path.angle > -70 && this.path.angle <= -20)
+            this.animation.play("walkLU");
     }
 
     function checkL(){
-        if(this.velocity.x < 0 && this.velocity.y < 0)
-            this.animation.play("walkLU");
-        else if(this.velocity.x < 0 && this.velocity.y > 0)
-            this.animation.play("walkLD");
-        else if(this.velocity.x <= 0)
+        if(this.velocity.x <= 0)
             this.animation.play("walkL");
     }
 
     function checkU(){
-        if(this.velocity.x < 0 && this.velocity.y < 0)
-            this.animation.play("walkLU");
-        else if(this.velocity.x > 0 && this.velocity.y < 0)
-            this.animation.play("walkRU");
-        else if(this.velocity.y <= 0)
+        if(this.velocity.y <= 0)
             this.animation.play("walkU");
     }
 
     function checkD(){
-        if(this.velocity.x < 0 && this.velocity.y > 0)
-            this.animation.play("walkLD");
-        else if(this.velocity.x > 0 && this.velocity.y > 0)
-            this.animation.play("walkRD");
-        else if(this.velocity.y >= 0)
+        if(this.velocity.y >= 0)
             this.animation.play("walkD");
     }
 

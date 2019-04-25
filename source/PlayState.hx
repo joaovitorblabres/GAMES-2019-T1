@@ -24,9 +24,10 @@ class PlayState extends FlxState{
 		_map = new TiledMap(AssetPaths.please__tmx);
 		_blocks = new FlxTilemap();
 		_blocks.loadMapFromArray(cast(_map.getLayer("blocks"), TiledTileLayer).tileArray, _map.width, _map.height, AssetPaths.Road__png, _map.tileWidth, _map.tileHeight, FlxTilemapAutoTiling.OFF, 1, 0, 2);
-		_blocks.follow();
+		//_blocks.follow();
 		_blocks.setTileProperties(1, FlxObject.NONE);
 		_blocks.setTileProperties(2, FlxObject.ANY);
+		_blocks.setPosition(0,0);
 		add(_blocks);
 		/*_map = new FlxTilemap();
 		_map.loadMapFromCSV("assets/tracks/pathfinding_map.txt", "assets/images/city.png", TILE_WIDTH, TILE_HEIGHT, 0, 0);
@@ -41,19 +42,36 @@ class PlayState extends FlxState{
 		_player.x = 24 * 23;
 		_player.y = 24 * 17;
 		add(_player);
+		var pos:String = "43,129
+41,474
+311,480
+307,550
+515,550
+506,350
+333,339
+328,220
+196,219
+467,225
+455,140";
+		var pathXY:Array<String> = pos.split('\n');
+		var path:Array<FlxPoint> = [];
+		for(point in pathXY){
+			var pt:Array<String> = point.split(',');
+			var _pt:FlxPoint = new FlxPoint(Std.parseInt(pt[0]), Std.parseInt(pt[1]));
+			path.push(_pt);
+		}
 
-		for(i in 0...2 ){
-			var path:Array<FlxPoint> = [];
-			for(point in 0...40){
-				var _pt:FlxPoint = new FlxPoint(FlxG.random.int(20, 650), FlxG.random.int(70, 550));
-				path.push(_pt);
-			}
+		for(i in 0...3 ){
 			_enemyPath.push(path);
-			var _car:Carro = new Carro(AssetPaths.yellow_vehicle__png);
-			_car.x = 24 * (23);
-			_car.y = 24 * (9 + i);
+			var _car:Carro = new Carro(AssetPaths.green_vehicle__png);
+			_car.x = path[0].x + i*30;
+			_car.y = path[0].y + i;
 			_car.velocity.x = _car.velocity.y = 1;
-			_car.path = new FlxPath().start(_enemyPath[i], 200, FlxPath.LOOP_FORWARD);
+			if(i%2 == 0)
+				_car.path = new FlxPath().start(_enemyPath[i], 200, FlxPath.LOOP_FORWARD);
+			else
+				_car.path = new FlxPath().start(_enemyPath[i], 200, FlxPath.LOOP_BACKWARD);
+			_car.path.speed = FlxMath.sinh(i)*50 + 100;
 			add(_car);
 			_inimigos.push(_car);
 		}
@@ -69,7 +87,7 @@ class PlayState extends FlxState{
 	override public function update(elapsed:Float):Void{
 		FlxG.collide(_player, _blocks);
 		//var overlapping = FlxG.pixelPerfectOverlap(_jogador, _tiro);
-		for(i in 0...2){
+		for(i in 0...3){
 			_inimigos[i].updateEm();
 			FlxG.collide(_inimigos[i], _blocks);
 			//FlxG.collide(_inimigos[i], _player);
@@ -104,7 +122,7 @@ class PlayState extends FlxState{
 		}*/
 
 		if(FlxG.mouse.justPressed){
-			FlxG.log.add(FlxG.mouse.screenX + " - " + FlxG.mouse.screenY);
+			
 		}
 		super.update(elapsed);
 
