@@ -13,7 +13,8 @@ class PlayState extends FlxState{
 	static inline var TILE_WIDTH:Int = 100;
 	static inline var TILE_HEIGHT:Int = 72;
 	static inline var QTD_INI:Int = 3;
-
+    
+	var _correio:Correio; // vai ficar preso em Curitiba
 	var _map:TiledMap;
 	var _blocks:FlxTilemap;
 	var _city:FlxTilemap;
@@ -26,6 +27,7 @@ class PlayState extends FlxState{
 	var _counter:Float = 0;
 
 	override public function create():Void{
+		_correio = new Correio();
 		FlxG.cameras.bgColor = 0xff000000;
 		_map = new TiledMap(AssetPaths.trabalho__tmx);
 		_blocks = new FlxTilemap();
@@ -34,8 +36,17 @@ class PlayState extends FlxState{
 		_blocks.setTileProperties(36, FlxObject.NONE);
 		_blocks.setTileProperties(18, FlxObject.ANY);
 		add(_blocks);
+
 		_bullets = new FlxTypedGroup<Bala>(200);
+
+		for(i in 0...200){
+            var s = new Bala();
+            s.kill();
+            _bullets.add(s);
+        }
+
 		_player = new Carro(AssetPaths.red_vehicle__png, _bullets);
+
 		_player.x = 24 * 23;
 		_player.y = 24 * 17;
 		add(_player);
@@ -48,8 +59,8 @@ class PlayState extends FlxState{
 333,339
 328,220
 196,219
-467,225
-455,140";
+445,225
+445,140";
 		var pathXY:Array<String> = pos.split('\n');
 		var path:Array<FlxPoint> = [];
 		for(point in pathXY){
@@ -57,12 +68,6 @@ class PlayState extends FlxState{
 			var _pt:FlxPoint = new FlxPoint(Std.parseInt(pt[0]), Std.parseInt(pt[1]));
 			path.push(_pt);
 		}
-
-        for(i in 0...200){
-            var s = new Bala();
-            s.kill();
-            _bullets.add(s);
-        }
 
 		for( i in 0...QTD_INI ){
 			_enemyPath.push(path);
@@ -91,6 +96,7 @@ class PlayState extends FlxState{
 		add(_btnBack);
 		add(_bullets);
 		add(_enemyBullets);
+		add(_correio);
 		super.create();
 
 	}
@@ -98,27 +104,27 @@ class PlayState extends FlxState{
 	override public function update(elapsed:Float):Void{
 		_counter += elapsed;
 		for(i in 0...QTD_INI){
-			if(((Math.floor(_counter) + 1) % (i+2)) == 0 && _inimigos[i].tirou == 0){
-				_inimigos[i].tirao(Std.int(_player.x), Std.int(_player.y));
+			if(((Math.floor(_counter)) % (i+1)) == 0 && _inimigos[i].tirou < 1){
 				_inimigos[i].tirou = 1;
+				_inimigos[i].tirao(Std.int(_player.x), Std.int(_player.y));
 			}
 		}
-		if(Math.floor(_counter) % 10 == 0){
+		if(Math.floor(_counter) % (QTD_INI+2) == 0){
 			for(i in 0...QTD_INI){
 				_inimigos[i].tirou = 0;
 			}
 		}
 		FlxG.collide(_player, _blocks);
 		//var overlapping = FlxG.pixelPerfectOverlap(_jogador, _tiro);
+		FlxG.collide(_blocks, _bullets, onOverlapBlock);
+		FlxG.collide(_blocks, _enemyBullets, onOverlapBlock);
+		FlxG.collide(_enemyBullets, _player, onOverlapDamages);
 		for(i in 0...QTD_INI){
 			_inimigos[i].updateEm();
 			FlxG.collide(_inimigos[i], _blocks);
 			FlxG.collide(_inimigos[i], _player);
+			FlxG.collide(_bullets, _inimigos[i], onOverlapDamages);
 		}
-		//var overlapping = _map.overlapsWithCallback(_player);
-
-		//FlxG.collide(_player, _map);
-		//FlxG.collide(_player, _blocks);
 
         if(FlxG.keys.pressed.D){
 			_player.D();
@@ -139,14 +145,8 @@ class PlayState extends FlxState{
 		if(FlxG.keys.pressed.R){
             playerReset();
         }
-
-		/*if(FlxG.keys.anyJustReleased([W, A, S, D])){
-			_player.animation.stop();
-		}*/
-
 		if(FlxG.mouse.justPressed && _player.municao > 0){
-			_player.tirao(FlxG.mouse.screenX, FlxG.mouse.screenY);
-			FlxG.log.add("PIUPIU");
+			_player.tirao(FlxG.mouse.x, FlxG.mouse.y);
 		}
 		super.update(elapsed);
 
@@ -161,8 +161,20 @@ class PlayState extends FlxState{
 	}
 
 	function goBack():Void{
-
         FlxG.switchState(new MeuMenuState());
-
     }
+
+	function onOverlapBlock(a:FlxSprite, b:FlxSprite):Void{
+		b.kill();
+	}
+
+	function onOverlapDamages(a:Entidade, b:Entidade):Void{
+		var m:Mensagem = new Mensagem();
+		a.kill();
+		m.from = a;
+		m.to = b;
+		m.op = Mensagem.OP_DANO;
+		m.data = 20;
+		_correio.send(m);
+	}
 }

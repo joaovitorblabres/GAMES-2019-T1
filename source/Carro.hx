@@ -13,7 +13,7 @@ class Carro extends Entidade{
 
     public function new(path:String, bullets:FlxTypedGroup<Bala>){
         super();
-        health = 10;
+        health = 100;
 
 		this.acceleration.x = this.acceleration.y = 0;
 		this.setFacingFlip(FlxObject.LEFT, true, false);
@@ -37,17 +37,12 @@ class Carro extends Entidade{
     }
 
     override function onMessage(m:Mensagem):Void{
-       /* FlxG.log.add("Personagem msg. Op = " + m.op);
         if (m.op == Mensagem.OP_DANO){
             hurt(m.data);
-            FlxG.log.add("HP = " + this.health);
         }
         if (m.op == Mensagem.OP_CURA){
-            if(this.health + m.data <= 10.1){
-                hurt(-m.data);
-                FlxG.log.add("HP = " + this.health);
-            }
-        }*/
+            hurt(-m.data);
+        }
     }
 
     public function D(){
@@ -94,19 +89,16 @@ class Carro extends Entidade{
 
     public function tirao(X:Int, Y:Int):Void{
         var b:Bala = _balas.getFirstAvailable();
-        //FlxG.log.add("PIU");
         if(b != null){
-//            b.scale.set(0.1,0.1);
             b.reset(this.x, this.y);
             _velocity.x = X - this.x;
             _velocity.y = Y - this.y;
             _velocity.normalize();
-            _velocity.scale(300);
+            _velocity.scale(500);
             b.velocity.x = _velocity.x;
             b.velocity.y = _velocity.y;
+            b.angle = Math.atan2(X - this.x, this.y - Y) * 180/Math.PI;
             this.municao--;
-            //b.animation.play("poof");
-            //b.scale.set(0.1,0.1);
         }
     }
 
