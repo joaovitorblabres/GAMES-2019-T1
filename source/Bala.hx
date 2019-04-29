@@ -11,10 +11,9 @@ class Bala extends FlxSprite{
         this.setFacingFlip(FlxObject.LEFT, true, false);
         this.setFacingFlip(FlxObject.RIGHT, false, false);
 		this.loadGraphic(AssetPaths.tire__png, true, 100, 100);
-        scale.set(fator, fator);
-        offset.set(fator, fator);
-        this.updateHitbox();
         this.setGraphicSize(10,10);
+        scale.set(fator, fator);
+        this.updateHitbox();
         
 		this.animation.add("bola", [3, 1, 0], 8);
         this.animation.play("bola");

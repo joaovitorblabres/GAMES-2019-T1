@@ -24,7 +24,6 @@ class PlayState extends FlxState{
 	var _enemyBullets:FlxTypedGroup<Bala>;
 	var _btnBack:FlxButton;
 	var _enemyPath:Array<Array<FlxPoint>> = [];
-	var _counter:Float = 0;
 
 	override public function create():Void{
 		_correio = new Correio();
@@ -39,13 +38,13 @@ class PlayState extends FlxState{
 
 		_bullets = new FlxTypedGroup<Bala>(200);
 
-		for(i in 0...200){
+		for(i in 0...20){
             var s = new Bala();
             s.kill();
             _bullets.add(s);
         }
 
-		_player = new Carro(AssetPaths.red_vehicle__png, _bullets);
+		_player = new Carro(AssetPaths.red_vehicle__png, _bullets, 1);
 
 		_player.x = 24 * 23;
 		_player.y = 24 * 17;
@@ -68,11 +67,11 @@ class PlayState extends FlxState{
 			var _pt:FlxPoint = new FlxPoint(Std.parseInt(pt[0]), Std.parseInt(pt[1]));
 			path.push(_pt);
 		}
-
+		_enemyBullets = new FlxTypedGroup<Bala>(1000);
 		for( i in 0...QTD_INI ){
 			_enemyPath.push(path);
-			_enemyBullets = new FlxTypedGroup<Bala>(1000);
-			var _car:Carro = new Carro(AssetPaths.yellow_vehicle__png, _enemyBullets);
+			
+			var _car:Carro = new Carro(AssetPaths.yellow_vehicle__png, _enemyBullets, 0);
 			_car.x = path[0].x + i*30;
 			_car.y = path[0].y + i;
 			if(i%2 == 0)
@@ -84,7 +83,7 @@ class PlayState extends FlxState{
 			_inimigos.push(_car);
 		}
 
-		for(i in 0...1000){
+		for(i in 0...100){
             var s = new Bala();
             s.kill();
             _enemyBullets.add(s);
@@ -102,29 +101,37 @@ class PlayState extends FlxState{
 	}
 
 	override public function update(elapsed:Float):Void{
-		_counter += elapsed;
 		for(i in 0...QTD_INI){
-			if(((Math.floor(_counter)) % (i+1)) == 0 && _inimigos[i].tirou < 1){
-				_inimigos[i].tirou = 1;
+			_inimigos[i]._counter -= elapsed;
+			if(_inimigos[i]._counter <= 0){
+				if(_inimigos[i].municao == 1)
+					_inimigos[i].municao = 20;
+				_inimigos[i]._counter = _inimigos[i].delay;
 				_inimigos[i].tirao(Std.int(_player.x), Std.int(_player.y));
 			}
-		}
-		if(Math.floor(_counter) % (QTD_INI+2) == 0){
-			for(i in 0...QTD_INI){
-				_inimigos[i].tirou = 0;
-			}
+			
 		}
 		FlxG.collide(_player, _blocks);
-		//var overlapping = FlxG.pixelPerfectOverlap(_jogador, _tiro);
+		//FlxG.overlap(_blocks, _bullets, onOverlapBlock);
 		FlxG.collide(_blocks, _bullets, onOverlapBlock);
 		FlxG.collide(_blocks, _enemyBullets, onOverlapBlock);
-		FlxG.collide(_enemyBullets, _player, onOverlapDamages);
+		FlxG.overlap(_enemyBullets, _player, onOverlapDamages);
+
 		for(i in 0...QTD_INI){
 			_inimigos[i].updateEm();
 			FlxG.collide(_inimigos[i], _blocks);
 			FlxG.collide(_inimigos[i], _player);
 			FlxG.collide(_bullets, _inimigos[i], onOverlapDamages);
 		}
+
+		if(_player.municao == 0){
+            _player._counter -= elapsed;
+        }
+
+        if(_player._counter <= 0){
+            _player.municao = 20;
+            _player._counter = _player.delay;
+        }
 
         if(FlxG.keys.pressed.D){
 			_player.D();
@@ -155,6 +162,7 @@ class PlayState extends FlxState{
 	function playerReset():Void{
 		_player.x = 24 * 23;
 		_player.y = 24 * 9;
+		_player.municao = 20;
 		_player.velocity.x = _player.velocity.y = 0;
 		_player.acceleration.x = _player.acceleration.y = 0;
 		_player.animation.play("walkU");		
@@ -174,7 +182,7 @@ class PlayState extends FlxState{
 		m.from = a;
 		m.to = b;
 		m.op = Mensagem.OP_DANO;
-		m.data = 20;
+		m.data = 50;
 		_correio.send(m);
 	}
 }

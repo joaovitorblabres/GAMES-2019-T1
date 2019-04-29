@@ -9,12 +9,15 @@ class Carro extends Entidade{
     public var municao:Int = 20;
     var _balas = new FlxTypedGroup<Bala>();
     var _velocity:FlxVector = new FlxVector();
-    public var tirou:Int = 0;
+    public var delay:Int = FlxG.random.int(2,10);
+    public var _counter:Float;
+    var player:Int;
 
-    public function new(path:String, bullets:FlxTypedGroup<Bala>){
+    public function new(path:String, bullets:FlxTypedGroup<Bala>, p:Int){
         super();
         health = 100;
-
+        this.player = p;
+        this._counter = this.delay;
 		this.acceleration.x = this.acceleration.y = 0;
 		this.setFacingFlip(FlxObject.LEFT, true, false);
         this.setFacingFlip(FlxObject.RIGHT, false, false);
@@ -33,12 +36,19 @@ class Carro extends Entidade{
     }
 
     public function updateEm():Void{
-        checkAngle();              
+        checkAngle();
     }
 
     override function onMessage(m:Mensagem):Void{
         if (m.op == Mensagem.OP_DANO){
-            hurt(m.data);
+            health -= m.data;
+            if(health <= 0 && this.player == 1){
+                FlxG.switchState(new EndState());
+            }
+            if(health <= 0 && this.player == 0){
+                this.kill();
+                this.destroy();
+            }
         }
         if (m.op == Mensagem.OP_CURA){
             hurt(-m.data);
