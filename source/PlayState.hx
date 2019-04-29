@@ -12,20 +12,23 @@ class PlayState extends FlxState{
 
 	static inline var TILE_WIDTH:Int = 100;
 	static inline var TILE_HEIGHT:Int = 72;
-	static inline var QTD_INI:Int = 3;
+	static inline var QTD_INI:Int = 5;
     
 	var _correio:Correio; // vai ficar preso em Curitiba
 	var _map:TiledMap;
 	var _blocks:FlxTilemap;
 	var _city:FlxTilemap;
-	var _player:Carro;
+	public var _player:Carro;
 	var _inimigos:Array<Carro> = [];
 	var _bullets:FlxTypedGroup<Bala>;
 	var _enemyBullets:FlxTypedGroup<Bala>;
 	var _btnBack:FlxButton;
 	var _enemyPath:Array<Array<FlxPoint>> = [];
+	var _hud:HUD;
 
 	override public function create():Void{
+		_hud = new HUD();
+		add(_hud);
 		_correio = new Correio();
 		FlxG.cameras.bgColor = 0xff000000;
 		_map = new TiledMap(AssetPaths.trabalho__tmx);
@@ -38,17 +41,16 @@ class PlayState extends FlxState{
 
 		_bullets = new FlxTypedGroup<Bala>(200);
 
-		for(i in 0...20){
-            var s = new Bala();
-            s.kill();
-            _bullets.add(s);
-        }
-
-		_player = new Carro(AssetPaths.red_vehicle__png, _bullets, 1);
+		_player = new Carro(AssetPaths.red_vehicle__png, _bullets, 1, FlxG.random.int(10, 50), 100);
 
 		_player.x = 24 * 23;
 		_player.y = 24 * 17;
 		add(_player);
+		for(i in 0...20){
+            var s = new Bala(_player.dano);
+            s.kill();
+            _bullets.add(s);
+        }
 		var pos:String = "43,129
 41,474
 311,480
@@ -67,11 +69,12 @@ class PlayState extends FlxState{
 			var _pt:FlxPoint = new FlxPoint(Std.parseInt(pt[0]), Std.parseInt(pt[1]));
 			path.push(_pt);
 		}
+
 		_enemyBullets = new FlxTypedGroup<Bala>(1000);
 		for( i in 0...QTD_INI ){
 			_enemyPath.push(path);
 			
-			var _car:Carro = new Carro(AssetPaths.yellow_vehicle__png, _enemyBullets, 0);
+			var _car:Carro = new Carro(AssetPaths.yellow_vehicle__png, _enemyBullets, 0, 35, 100);
 			_car.x = path[0].x + i*30;
 			_car.y = path[0].y + i;
 			if(i%2 == 0)
@@ -101,17 +104,25 @@ class PlayState extends FlxState{
 	}
 
 	override public function update(elapsed:Float):Void{
+		_player.tempo += elapsed;
+		var al:Int = 0;
 		for(i in 0...QTD_INI){
-			_inimigos[i]._counter -= elapsed;
-			if(_inimigos[i]._counter <= 0){
-				if(_inimigos[i].municao == 1)
-					_inimigos[i].municao = 20;
-				_inimigos[i]._counter = _inimigos[i].delay;
-				_inimigos[i].tirao(Std.int(_player.x), Std.int(_player.y));
+			if(_inimigos[i].alive){
+				al += 1;
+				_inimigos[i]._counter -= elapsed;
+				if(_inimigos[i]._counter <= 0){
+					if(_inimigos[i].municao == 1)
+						_inimigos[i].municao = 20;
+					_inimigos[i]._counter = _inimigos[i].delay;
+					_inimigos[i].tirao(Std.int(_player.x), Std.int(_player.y));
+				}
 			}
 			
 		}
-		FlxG.collide(_player, _blocks);
+		if(al == 0){
+			FlxG.switchState(new WinState(_player.tempo));
+		}
+		FlxG.collide(_player, _blocks, onCollideBlock);
 		//FlxG.overlap(_blocks, _bullets, onOverlapBlock);
 		FlxG.collide(_blocks, _bullets, onOverlapBlock);
 		FlxG.collide(_blocks, _enemyBullets, onOverlapBlock);
@@ -119,8 +130,8 @@ class PlayState extends FlxState{
 
 		for(i in 0...QTD_INI){
 			_inimigos[i].updateEm();
-			FlxG.collide(_inimigos[i], _blocks);
-			FlxG.collide(_inimigos[i], _player);
+			FlxG.collide(_inimigos[i], _blocks, onCollideBlock);
+			FlxG.collide(_inimigos[i], _player, onCollide);
 			FlxG.collide(_bullets, _inimigos[i], onOverlapDamages);
 		}
 
@@ -163,6 +174,7 @@ class PlayState extends FlxState{
 		_player.x = 24 * 23;
 		_player.y = 24 * 9;
 		_player.municao = 20;
+		_player.health = 100;
 		_player.velocity.x = _player.velocity.y = 0;
 		_player.acceleration.x = _player.acceleration.y = 0;
 		_player.animation.play("walkU");		
@@ -176,13 +188,53 @@ class PlayState extends FlxState{
 		b.kill();
 	}
 
-	function onOverlapDamages(a:Entidade, b:Entidade):Void{
+	function onCollide(a:Entidade, b:Entidade):Void{
 		var m:Mensagem = new Mensagem();
-		a.kill();
 		m.from = a;
 		m.to = b;
 		m.op = Mensagem.OP_DANO;
-		m.data = 50;
+		m.data = 1;
+		_correio.send(m);
+		m.from = b;
+		m.to = a;
+		m.op = Mensagem.OP_DANO;
+		m.data = 1;
+		_correio.send(m);
+	}
+
+	function onCollideBlock(a:FlxSprite, b:Entidade):Void{
+		if(a.angle > 0 && a.angle <= 90){
+			a.x -= 10;
+			a.y += 10;
+		}
+        if(a.angle > 90 && a.angle <= 180){
+			a.x -= 10;
+			a.y -= 10;
+		}
+        if(a.angle > -90 && a.angle <= -180){
+			a.x += 10;
+			a.y -= 10;
+		}
+        if(a.angle > 0 && a.angle <= -90){
+			a.x += 10;
+			a.y += 10;
+		}
+
+		var m:Mensagem = new Mensagem();
+		m.from = cast b;
+		m.to = cast a;
+		m.op = Mensagem.OP_DANO;
+		m.data = 1;
+		_correio.send(m);
+	}
+
+	function onOverlapDamages(a:Bala, b:Entidade):Void{
+		var m:Mensagem = new Mensagem();
+		a.kill();
+		m.from = cast a;
+		m.to = b;
+		m.op = Mensagem.OP_DANO;
+		m.data = a.dano;
 		_correio.send(m);
 	}
 }

@@ -12,10 +12,13 @@ class Carro extends Entidade{
     public var delay:Int = FlxG.random.int(2,10);
     public var _counter:Float;
     var player:Int;
+    public var tempo:Float = 0;
+    public var dano:Int = 0;
 
-    public function new(path:String, bullets:FlxTypedGroup<Bala>, p:Int){
+    public function new(path:String, bullets:FlxTypedGroup<Bala>, p:Int, dano:Int, vida:Int){
         super();
-        health = 100;
+        health = vida;
+        this.dano = dano;
         this.player = p;
         this._counter = this.delay;
 		this.acceleration.x = this.acceleration.y = 0;
@@ -43,11 +46,11 @@ class Carro extends Entidade{
         if (m.op == Mensagem.OP_DANO){
             health -= m.data;
             if(health <= 0 && this.player == 1){
-                FlxG.switchState(new EndState());
+                FlxG.switchState(new EndState(tempo));
             }
             if(health <= 0 && this.player == 0){
                 this.kill();
-                this.destroy();
+                //this.destroy();
             }
         }
         if (m.op == Mensagem.OP_CURA){
@@ -101,6 +104,7 @@ class Carro extends Entidade{
         var b:Bala = _balas.getFirstAvailable();
         if(b != null){
             b.reset(this.x, this.y);
+            b.dano = this.dano;
             _velocity.x = X - this.x;
             _velocity.y = Y - this.y;
             _velocity.normalize();

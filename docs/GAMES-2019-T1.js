@@ -895,9 +895,9 @@ ApplicationMain.create = function(config) {
 	ManifestResources.init(config);
 	var _this = app.meta;
 	if(__map_reserved["build"] != null) {
-		_this.setReserved("build","7");
+		_this.setReserved("build","9");
 	} else {
-		_this.h["build"] = "7";
+		_this.h["build"] = "9";
 	}
 	var _this1 = app.meta;
 	if(__map_reserved["company"] != null) {
@@ -6518,15 +6518,18 @@ flixel_FlxSprite.prototype = $extend(flixel_FlxObject.prototype,{
 	,__class__: flixel_FlxSprite
 	,__properties__: $extend(flixel_FlxObject.prototype.__properties__,{set_clipRect:"set_clipRect",set_color:"set_color",set_blend:"set_blend",set_flipY:"set_flipY",set_flipX:"set_flipX",set_facing:"set_facing",set_alpha:"set_alpha",set_graphic:"set_graphic",set_frames:"set_frames",set_frame:"set_frame",set_pixels:"set_pixels",get_pixels:"get_pixels",set_antialiasing:"set_antialiasing",set_useFramePixels:"set_useFramePixels"})
 });
-var Bala = function() {
+var Bala = function(_dano) {
+	if(_dano == null) {
+		_dano = 0;
+	}
 	flixel_FlxSprite.call(this);
+	this.dano = _dano;
 	this._facingFlip.set(1,{ x : true, y : false});
 	this._facingFlip.set(16,{ x : false, y : false});
 	this.loadGraphic("assets/images/tire.png",true,100,100);
-	this.scale.set(Bala.fator,Bala.fator);
-	this.offset.set(Bala.fator,Bala.fator);
-	this.updateHitbox();
 	this.setGraphicSize(10,10);
+	this.scale.set(Bala.fator,Bala.fator);
+	this.updateHitbox();
 	this.animation.add("bola",[3,1,0],8);
 	this.animation.play("bola");
 	this.set_facing(16);
@@ -6535,7 +6538,8 @@ $hxClasses["Bala"] = Bala;
 Bala.__name__ = ["Bala"];
 Bala.__super__ = flixel_FlxSprite;
 Bala.prototype = $extend(flixel_FlxSprite.prototype,{
-	update: function(elapsed) {
+	dano: null
+	,update: function(elapsed) {
 		if(!this.isOnScreen()) {
 			this.kill();
 		}
@@ -6554,14 +6558,19 @@ Entidade.prototype = $extend(flixel_FlxSprite.prototype,{
 	}
 	,__class__: Entidade
 });
-var Carro = function(path,bullets) {
-	this.tirou = 0;
+var Carro = function(path,bullets,p,dano,vida) {
+	this.dano = 0;
+	this.tempo = 0;
+	this.delay = flixel_FlxG.random["int"](2,10);
 	var this1 = new flixel_math_FlxPoint(0,0);
 	this._velocity = this1;
 	this._balas = new flixel_group_FlxTypedGroup();
 	this.municao = 20;
 	Entidade.call(this);
-	this.health = 100;
+	this.health = vida;
+	this.dano = dano;
+	this.player = p;
+	this._counter = this.delay;
 	this.acceleration.set_x(this.acceleration.set_y(0));
 	this._facingFlip.set(1,{ x : true, y : false});
 	this._facingFlip.set(16,{ x : false, y : false});
@@ -6585,13 +6594,26 @@ Carro.prototype = $extend(Entidade.prototype,{
 	municao: null
 	,_balas: null
 	,_velocity: null
-	,tirou: null
+	,delay: null
+	,_counter: null
+	,player: null
+	,tempo: null
+	,dano: null
 	,updateEm: function() {
 		this.checkAngle();
 	}
 	,onMessage: function(m) {
 		if(m.op == 0) {
-			this.hurt(m.data);
+			this.health -= m.data;
+			if(this.health <= 0 && this.player == 1) {
+				var nextState = new EndState(this.tempo);
+				if(flixel_FlxG.game._state.switchTo(nextState)) {
+					flixel_FlxG.game._requestedState = nextState;
+				}
+			}
+			if(this.health <= 0 && this.player == 0) {
+				this.kill();
+			}
 		}
 		if(m.op == 1) {
 			this.hurt(-m.data);
@@ -6649,6 +6671,7 @@ Carro.prototype = $extend(Entidade.prototype,{
 		var b = this._balas.getFirstAvailable();
 		if(b != null) {
 			b.reset(this.x,this.y);
+			b.dano = this.dano;
 			this._velocity.set_x(X - this.x);
 			this._velocity.set_y(Y - this.y);
 			flixel_math__$FlxVector_FlxVector_$Impl_$.normalize(this._velocity);
@@ -7339,7 +7362,7 @@ CreditsState.prototype = $extend(flixel_FlxState.prototype,{
 		this._prog.set_moves(true);
 		this._prog.velocity.set_y(-40);
 		this._prog.set_alignment("center");
-		this._arte = new flixel_text_FlxText(0,0,0,"[ARTE]\n\nCarros\nCredit Racoon Media via\nLicense (Creative Commons Zero, CC0)\n\nPista\nVirgate Designs via\nLicense (Creative Commons Zero, CC-BY 3.0)\n\n\"Grama\"\nJoão Vitor Bruniera Labres\n",10);
+		this._arte = new flixel_text_FlxText(0,0,0,"[ARTE]\n\nCarros\nCredit Racoon Media via\nLicense (Creative Commons Zero, CC0)\n\nPneus e \"asfalto\": Google\n\n\"Grama\"\nJoão Vitor Bruniera Labres\n",10);
 		this._arte.set_x(flixel_FlxG.width / 2 - this._arte.get_width() / 2);
 		this._arte.set_y(this._prog.y + this._prog.get_height() + 10);
 		this._arte.set_moves(true);
@@ -7475,6 +7498,80 @@ EReg.prototype = {
 	}
 	,__class__: EReg
 };
+var EndState = function(tempo) {
+	this.tempo = 40;
+	this.tempo = tempo;
+	flixel_FlxState.call(this);
+};
+$hxClasses["EndState"] = EndState;
+EndState.__name__ = ["EndState"];
+EndState.__super__ = flixel_FlxState;
+EndState.prototype = $extend(flixel_FlxState.prototype,{
+	_end: null
+	,_voltar: null
+	,_eutbm: null
+	,_tempo: null
+	,tempo: null
+	,create: function() {
+		this._end = new flixel_text_FlxText(0,0,0,"VOCE PERDEU O JOGO\n\n",20);
+		this._end.set_x(flixel_FlxG.width / 2 - this._end.get_width() / 2);
+		this._end.set_y(flixel_FlxG.height / 2 - this._end.get_height() / 2);
+		this._eutbm = new flixel_text_FlxText(0,0,0,"E EU TAMBÉM\n\n",8);
+		this._eutbm.set_x(flixel_FlxG.width / 2 - this._eutbm.get_width() / 2);
+		this._eutbm.set_y(this._end.y + this._end.get_height() / 2 + 2);
+		var s = flixel_FlxG.game._state;
+		this._tempo = new flixel_text_FlxText(0,0,0,"VOCê SOBREVIVEU POR " + (this.tempo | 0) + "s \n\n",10);
+		this._tempo.set_x(flixel_FlxG.width / 2 - this._tempo.get_width() / 2);
+		this._tempo.set_y(this._eutbm.y + this._eutbm.get_height() / 2 + 2);
+		this._voltar = new flixel_text_FlxText(0,0,0,"\nClique para voltar",10);
+		this._voltar.set_x(flixel_FlxG.width / 2 - this._voltar.get_width() / 2);
+		this._voltar.set_y(this._end.y + this._end.get_height() + 10);
+		this.add(this._end);
+		this.add(this._eutbm);
+		this.add(this._tempo);
+		this.add(this._voltar);
+	}
+	,goBack: function() {
+		var nextState = new MeuMenuState();
+		if(flixel_FlxG.game._state.switchTo(nextState)) {
+			flixel_FlxG.game._requestedState = nextState;
+		}
+	}
+	,update: function(elapsed) {
+		if(flixel_FlxG.mouse._leftButton.current == 2) {
+			var nextState = new MeuMenuState();
+			if(flixel_FlxG.game._state.switchTo(nextState)) {
+				flixel_FlxG.game._requestedState = nextState;
+			}
+		}
+		flixel_FlxState.prototype.update.call(this,elapsed);
+	}
+	,__class__: EndState
+});
+var HUD = function() {
+	flixel_group_FlxTypedGroup.call(this);
+	this._municao = new flixel_text_FlxText(600,5,0,"Municao: 20/20",15);
+	this._vida = new flixel_text_FlxText(600,45,0,"Vida: 100/100",15);
+	this._tempo = new flixel_text_FlxText(600,85,0,"Tempo: 0s",15);
+	this.add(this._vida);
+	this.add(this._municao);
+	this.add(this._tempo);
+};
+$hxClasses["HUD"] = HUD;
+HUD.__name__ = ["HUD"];
+HUD.__super__ = flixel_group_FlxTypedGroup;
+HUD.prototype = $extend(flixel_group_FlxTypedGroup.prototype,{
+	_municao: null
+	,_vida: null
+	,_tempo: null
+	,update: function(elapsed) {
+		var s = flixel_FlxG.game._state;
+		this._municao.set_text("Municao: " + s._player.municao + "/20");
+		this._vida.set_text("Vida: " + s._player.health + "/100");
+		this._tempo.set_text("Tempo: " + Math.floor(s._player.tempo) + "s");
+	}
+	,__class__: HUD
+});
 var HxOverrides = function() { };
 $hxClasses["HxOverrides"] = HxOverrides;
 HxOverrides.__name__ = ["HxOverrides"];
@@ -7614,7 +7711,7 @@ ManifestResources.init = function(config) {
 	var data;
 	var manifest;
 	var library;
-	data = "{\"name\":null,\"assets\":\"aoy4:pathy37:assets%2Ftracks%2Fpathfinding_map.txty4:sizei13y4:typey4:TEXTy2:idR1y7:preloadtgoR0y31:assets%2Ftracks%2FRoad_path.txtR2i294R3R4R5R7R6tgoR0y28:assets%2Ftracks%2Fblocks.csvR2i1250R3R4R5R8R6tgoR0y26:assets%2Ftracks%2FRoad.csvR2i1711R3R4R5R9R6tgoR0y35:assets%2Fimages%2Fgreen_vehicle.pngR2i8114R3y5:IMAGER5R10R6tgoR0y26:assets%2Fimages%2Ftire.pngR2i39093R3R11R5R12R6tgoR0y35:assets%2Fimages%2Ftrack_license.txtR2i99R3R4R5R13R6tgoR0y36:assets%2Fimages%2Forange_vehicle.pngR2i7725R3R11R5R14R6tgoR0y33:assets%2Fimages%2Fcar_license.txtR2i529R3R4R5R15R6tgoR0y26:assets%2Fimages%2Fcity.pngR2i12928R3R11R5R16R6tgoR0y33:assets%2Fimages%2Fred_vehicle.pngR2i4524R3R11R5R17R6tgoR0y26:assets%2Fimages%2FRoad.pngR2i983R3R11R5R18R6tgoR0y36:assets%2Fimages%2Fyellow_vehicle.pngR2i4513R3R11R5R19R6tgoR0y27:assets%2Fimages%2Fcity2.tsxR2i183R3R4R5R20R6tgoR0y34:assets%2Fimages%2Fblue_vehicle.pngR2i8013R3R11R5R21R6tgoR0y34:assets%2Fimages%2Fgrey_vehicle.pngR2i8403R3R11R5R22R6tgoR0y35:assets%2Fimages%2Fwhite_vehicle.pngR2i7060R3R11R5R23R6tgoR0y35:assets%2Fimages%2Fblack_vehicle.pngR2i8137R3R11R5R24R6tgoR0y30:assets%2Fimages%2Ftrabalho.tmxR2i2222R3R4R5R25R6tgoR0y36:assets%2Fsounds%2Fsounds-go-here.txtR2zR3R4R5R26R6tgoR0y36:assets%2Fmusic%2Fmusic-goes-here.txtR2zR3R4R5R27R6tgoR0y34:assets%2Fdata%2Fdata-goes-here.txtR2zR3R4R5R28R6tgoR2i2114R3y5:MUSICR5y26:flixel%2Fsounds%2Fbeep.mp3y9:pathGroupaR30y26:flixel%2Fsounds%2Fbeep.ogghR6tgoR2i39706R3R29R5y28:flixel%2Fsounds%2Fflixel.mp3R31aR33y28:flixel%2Fsounds%2Fflixel.ogghR6tgoR2i5794R3y5:SOUNDR5R32R31aR30R32hgoR2i33629R3R35R5R34R31aR33R34hgoR2i15744R3y4:FONTy9:classNamey35:__ASSET__flixel_fonts_nokiafc22_ttfR5y30:flixel%2Ffonts%2Fnokiafc22.ttfR6tgoR2i29724R3R36R37y36:__ASSET__flixel_fonts_monsterrat_ttfR5y31:flixel%2Ffonts%2Fmonsterrat.ttfR6tgoR0y33:flixel%2Fimages%2Fui%2Fbutton.pngR2i519R3R11R5R42R6tgoR0y36:flixel%2Fimages%2Flogo%2Fdefault.pngR2i3280R3R11R5R43R6tgh\",\"rootPath\":null,\"version\":2,\"libraryArgs\":[],\"libraryType\":null}";
+	data = "{\"name\":null,\"assets\":\"aoy4:pathy37:assets%2Ftracks%2Fpathfinding_map.txty4:sizei13y4:typey4:TEXTy2:idR1y7:preloadtgoR0y31:assets%2Ftracks%2FRoad_path.txtR2i294R3R4R5R7R6tgoR0y28:assets%2Ftracks%2Fblocks.csvR2i1250R3R4R5R8R6tgoR0y26:assets%2Ftracks%2FRoad.csvR2i1711R3R4R5R9R6tgoR0y35:assets%2Fimages%2Fgreen_vehicle.pngR2i8114R3y5:IMAGER5R10R6tgoR0y26:assets%2Fimages%2Ftire.pngR2i39093R3R11R5R12R6tgoR0y35:assets%2Fimages%2Ftrack_license.txtR2i99R3R4R5R13R6tgoR0y36:assets%2Fimages%2Forange_vehicle.pngR2i7725R3R11R5R14R6tgoR0y33:assets%2Fimages%2Fcar_license.txtR2i529R3R4R5R15R6tgoR0y33:assets%2Fimages%2Fspritesheet.pngR2i72311R3R11R5R16R6tgoR0y26:assets%2Fimages%2Fcity.pngR2i14667R3R11R5R17R6tgoR0y34:assets%2Fimages%2Fspritesheet2.pngR2i74525R3R11R5R18R6tgoR0y33:assets%2Fimages%2Fred_vehicle.pngR2i4524R3R11R5R19R6tgoR0y26:assets%2Fimages%2FRoad.pngR2i983R3R11R5R20R6tgoR0y36:assets%2Fimages%2Fyellow_vehicle.pngR2i4513R3R11R5R21R6tgoR0y27:assets%2Fimages%2Fcity2.tsxR2i183R3R4R5R22R6tgoR0y34:assets%2Fimages%2Fblue_vehicle.pngR2i8013R3R11R5R23R6tgoR0y34:assets%2Fimages%2Fgrey_vehicle.pngR2i8403R3R11R5R24R6tgoR0y35:assets%2Fimages%2Fwhite_vehicle.pngR2i7060R3R11R5R25R6tgoR0y35:assets%2Fimages%2Fblack_vehicle.pngR2i8137R3R11R5R26R6tgoR0y30:assets%2Fimages%2Ftrabalho.tmxR2i2222R3R4R5R27R6tgoR0y36:assets%2Fsounds%2Fsounds-go-here.txtR2zR3R4R5R28R6tgoR0y36:assets%2Fmusic%2Fmusic-goes-here.txtR2zR3R4R5R29R6tgoR0y34:assets%2Fdata%2Fdata-goes-here.txtR2zR3R4R5R30R6tgoR2i2114R3y5:MUSICR5y26:flixel%2Fsounds%2Fbeep.mp3y9:pathGroupaR32y26:flixel%2Fsounds%2Fbeep.ogghR6tgoR2i39706R3R31R5y28:flixel%2Fsounds%2Fflixel.mp3R33aR35y28:flixel%2Fsounds%2Fflixel.ogghR6tgoR2i5794R3y5:SOUNDR5R34R33aR32R34hgoR2i33629R3R37R5R36R33aR35R36hgoR2i15744R3y4:FONTy9:classNamey35:__ASSET__flixel_fonts_nokiafc22_ttfR5y30:flixel%2Ffonts%2Fnokiafc22.ttfR6tgoR2i29724R3R38R39y36:__ASSET__flixel_fonts_monsterrat_ttfR5y31:flixel%2Ffonts%2Fmonsterrat.ttfR6tgoR0y33:flixel%2Fimages%2Fui%2Fbutton.pngR2i519R3R11R5R44R6tgoR0y36:flixel%2Fimages%2Flogo%2Fdefault.pngR2i3280R3R11R5R45R6tgh\",\"rootPath\":null,\"version\":2,\"libraryArgs\":[],\"libraryType\":null}";
 	manifest = lime_utils_AssetManifest.parse(data,ManifestResources.rootPath);
 	library = lime_utils_AssetLibrary.fromManifest(manifest);
 	lime_utils_Assets.registerLibrary("default",library);
@@ -8017,7 +8114,6 @@ MeuMenuState.prototype = $extend(flixel_FlxState.prototype,{
 	,__class__: MeuMenuState
 });
 var PlayState = function(MaxSize) {
-	this._counter = 0;
 	this._enemyPath = [];
 	this._inimigos = [];
 	flixel_FlxState.call(this,MaxSize);
@@ -8036,8 +8132,10 @@ PlayState.prototype = $extend(flixel_FlxState.prototype,{
 	,_enemyBullets: null
 	,_btnBack: null
 	,_enemyPath: null
-	,_counter: null
+	,_hud: null
 	,create: function() {
+		this._hud = new HUD();
+		this.add(this._hud);
 		this._correio = new Correio();
 		flixel_FlxG.cameras.set_bgColor(-16777216);
 		this._map = new flixel_addons_editors_tiled_TiledMap("assets/images/trabalho.tmx");
@@ -8047,17 +8145,17 @@ PlayState.prototype = $extend(flixel_FlxState.prototype,{
 		this._blocks.setTileProperties(18,4369);
 		this.add(this._blocks);
 		this._bullets = new flixel_group_FlxTypedGroup(200);
-		var _g = 0;
-		while(_g < 200) {
-			var i = _g++;
-			var s = new Bala();
-			s.kill();
-			this._bullets.add(s);
-		}
-		this._player = new Carro("assets/images/red_vehicle.png",this._bullets);
+		this._player = new Carro("assets/images/red_vehicle.png",this._bullets,1,flixel_FlxG.random["int"](10,50),100);
 		this._player.set_x(552);
 		this._player.set_y(408);
 		this.add(this._player);
+		var _g = 0;
+		while(_g < 20) {
+			var i = _g++;
+			var s = new Bala(this._player.dano);
+			s.kill();
+			this._bullets.add(s);
+		}
 		var pos = "43,129\n41,474\n311,480\n307,550\n515,550\n506,350\n333,339\n328,220\n196,219\n445,225\n445,140";
 		var pathXY = pos.split("\n");
 		var path = [];
@@ -8069,25 +8167,25 @@ PlayState.prototype = $extend(flixel_FlxState.prototype,{
 			var _pt = new flixel_math_FlxPoint(Std.parseInt(pt[0]),Std.parseInt(pt[1]));
 			path.push(_pt);
 		}
+		this._enemyBullets = new flixel_group_FlxTypedGroup(1000);
 		var _g2 = 0;
-		while(_g2 < 3) {
+		while(_g2 < 5) {
 			var i1 = _g2++;
 			this._enemyPath.push(path);
-			this._enemyBullets = new flixel_group_FlxTypedGroup(1000);
-			var _car = new Carro("assets/images/yellow_vehicle.png",this._enemyBullets);
+			var _car = new Carro("assets/images/yellow_vehicle.png",this._enemyBullets,0,35,100);
 			_car.set_x(path[0].x + i1 * 30);
 			_car.set_y(path[0].y + i1);
 			if(i1 % 2 == 0) {
-				_car.set_path(new flixel_util_FlxPath());
+				_car.set_path(new flixel_util_FlxPath().start(this._enemyPath[i1],200,16));
 			} else {
-				_car.set_path(new flixel_util_FlxPath());
+				_car.set_path(new flixel_util_FlxPath().start(this._enemyPath[i1],200,256));
 			}
 			_car.path.speed = (Math.exp(i1) - Math.exp(-i1)) / 2 * 50 + 100;
 			this.add(_car);
 			this._inimigos.push(_car);
 		}
 		var _g3 = 0;
-		while(_g3 < 1000) {
+		while(_g3 < 100) {
 			var i2 = _g3++;
 			var s1 = new Bala();
 			s1.kill();
@@ -8103,33 +8201,47 @@ PlayState.prototype = $extend(flixel_FlxState.prototype,{
 		flixel_FlxState.prototype.create.call(this);
 	}
 	,update: function(elapsed) {
-		this._counter += elapsed;
+		this._player.tempo += elapsed;
+		var al = 0;
 		var _g = 0;
-		while(_g < 3) {
+		while(_g < 5) {
 			var i = _g++;
-			if((Math.floor(this._counter) + 1) % (i + 2) == 0 && this._inimigos[i].tirou == 0) {
-				this._inimigos[i].tirao(this._player.x | 0,this._player.y | 0);
-				this._inimigos[i].tirou = 1;
+			if(this._inimigos[i].alive) {
+				++al;
+				this._inimigos[i]._counter -= elapsed;
+				if(this._inimigos[i]._counter <= 0) {
+					if(this._inimigos[i].municao == 1) {
+						this._inimigos[i].municao = 20;
+					}
+					this._inimigos[i]._counter = this._inimigos[i].delay;
+					this._inimigos[i].tirao(this._player.x | 0,this._player.y | 0);
+				}
 			}
 		}
-		if(Math.floor(this._counter) % 10 == 0) {
-			var _g1 = 0;
-			while(_g1 < 3) {
-				var i1 = _g1++;
-				this._inimigos[i1].tirou = 0;
+		if(al == 0) {
+			var nextState = new WinState(this._player.tempo);
+			if(flixel_FlxG.game._state.switchTo(nextState)) {
+				flixel_FlxG.game._requestedState = nextState;
 			}
 		}
-		flixel_FlxG.overlap(this._player,this._blocks,null,flixel_FlxObject.separate);
+		flixel_FlxG.overlap(this._player,this._blocks,$bind(this,this.onCollideBlock),flixel_FlxObject.separate);
 		flixel_FlxG.overlap(this._blocks,this._bullets,$bind(this,this.onOverlapBlock),flixel_FlxObject.separate);
 		flixel_FlxG.overlap(this._blocks,this._enemyBullets,$bind(this,this.onOverlapBlock),flixel_FlxObject.separate);
-		flixel_FlxG.overlap(this._enemyBullets,this._player,$bind(this,this.onOverlapDamages),flixel_FlxObject.separate);
-		var _g2 = 0;
-		while(_g2 < 3) {
-			var i2 = _g2++;
-			this._inimigos[i2].updateEm();
-			flixel_FlxG.overlap(this._inimigos[i2],this._blocks,null,flixel_FlxObject.separate);
-			flixel_FlxG.overlap(this._inimigos[i2],this._player,null,flixel_FlxObject.separate);
-			flixel_FlxG.overlap(this._bullets,this._inimigos[i2],$bind(this,this.onOverlapDamages),flixel_FlxObject.separate);
+		flixel_FlxG.overlap(this._enemyBullets,this._player,$bind(this,this.onOverlapDamages));
+		var _g1 = 0;
+		while(_g1 < 5) {
+			var i1 = _g1++;
+			this._inimigos[i1].updateEm();
+			flixel_FlxG.overlap(this._inimigos[i1],this._blocks,$bind(this,this.onCollideBlock),flixel_FlxObject.separate);
+			flixel_FlxG.overlap(this._inimigos[i1],this._player,$bind(this,this.onCollide),flixel_FlxObject.separate);
+			flixel_FlxG.overlap(this._bullets,this._inimigos[i1],$bind(this,this.onOverlapDamages),flixel_FlxObject.separate);
+		}
+		if(this._player.municao == 0) {
+			this._player._counter -= elapsed;
+		}
+		if(this._player._counter <= 0) {
+			this._player.municao = 20;
+			this._player._counter = this._player.delay;
 		}
 		var _this = flixel_FlxG.keys.pressed;
 		if(_this.keyManager.checkStatus(68,_this.status)) {
@@ -8159,6 +8271,8 @@ PlayState.prototype = $extend(flixel_FlxState.prototype,{
 	,playerReset: function() {
 		this._player.set_x(552);
 		this._player.set_y(216);
+		this._player.municao = 20;
+		this._player.health = 100;
 		this._player.velocity.set_x(this._player.velocity.set_y(0));
 		this._player.acceleration.set_x(this._player.acceleration.set_y(0));
 		this._player.animation.play("walkU");
@@ -8172,13 +8286,58 @@ PlayState.prototype = $extend(flixel_FlxState.prototype,{
 	,onOverlapBlock: function(a,b) {
 		b.kill();
 	}
+	,onCollide: function(a,b) {
+		var m = new Mensagem();
+		m.from = a;
+		m.to = b;
+		m.op = 0;
+		m.data = 1;
+		this._correio.send(m);
+		m.from = b;
+		m.to = a;
+		m.op = 0;
+		m.data = 1;
+		this._correio.send(m);
+	}
+	,onCollideBlock: function(a,b) {
+		if(a.angle > 0 && a.angle <= 90) {
+			var _g = a;
+			_g.set_x(_g.x - 10);
+			var _g1 = a;
+			_g1.set_y(_g1.y + 10);
+		}
+		if(a.angle > 90 && a.angle <= 180) {
+			var _g2 = a;
+			_g2.set_x(_g2.x - 10);
+			var _g3 = a;
+			_g3.set_y(_g3.y - 10);
+		}
+		if(a.angle > -90 && a.angle <= -180) {
+			var _g4 = a;
+			_g4.set_x(_g4.x + 10);
+			var _g5 = a;
+			_g5.set_y(_g5.y - 10);
+		}
+		if(a.angle > 0 && a.angle <= -90) {
+			var _g6 = a;
+			_g6.set_x(_g6.x + 10);
+			var _g7 = a;
+			_g7.set_y(_g7.y + 10);
+		}
+		var m = new Mensagem();
+		m.from = b;
+		m.to = a;
+		m.op = 0;
+		m.data = 1;
+		this._correio.send(m);
+	}
 	,onOverlapDamages: function(a,b) {
 		var m = new Mensagem();
 		a.kill();
 		m.from = a;
 		m.to = b;
 		m.op = 0;
-		m.data = 20;
+		m.data = a.dano;
 		this._correio.send(m);
 	}
 	,__class__: PlayState
@@ -8622,6 +8781,82 @@ _$UInt_UInt_$Impl_$.toFloat = function(this1) {
 		return $int + 0.0;
 	}
 };
+var WinState = function(tempo) {
+	this.arr2 = [];
+	this.arr = [];
+	this.tempo = 40;
+	this._fogos = 0.5;
+	this.tempo = tempo;
+	flixel_FlxState.call(this);
+};
+$hxClasses["WinState"] = WinState;
+WinState.__name__ = ["WinState"];
+WinState.__super__ = flixel_FlxState;
+WinState.prototype = $extend(flixel_FlxState.prototype,{
+	_end: null
+	,_voltar: null
+	,_tempo: null
+	,_fogos: null
+	,tempo: null
+	,arr: null
+	,arr2: null
+	,create: function() {
+		var _g = 0;
+		while(_g < 70) {
+			var i = _g++;
+			this.arr.push(i);
+		}
+		var _g1 = 0;
+		while(_g1 < 80) {
+			var i1 = _g1++;
+			this.arr2.push(i1);
+		}
+		this._end = new flixel_text_FlxText(0,0,0,"VOCE GANHOU!!\n\n",20);
+		this._end.set_x(flixel_FlxG.width / 2 - this._end.get_width() / 2);
+		this._end.set_y(flixel_FlxG.height / 2 - this._end.get_height() / 2);
+		this._tempo = new flixel_text_FlxText(0,0,0,"VOCê SOBREVIVEU POR " + (this.tempo | 0) + "s \n\n",10);
+		this._tempo.set_x(flixel_FlxG.width / 2 - this._tempo.get_width() / 2);
+		this._tempo.set_y(this._end.y + this._end.get_height() / 2 + 2);
+		this._voltar = new flixel_text_FlxText(0,0,0,"\nClique para voltar",10);
+		this._voltar.set_x(flixel_FlxG.width / 2 - this._voltar.get_width() / 2);
+		this._voltar.set_y(this._end.y + this._end.get_height() + 10);
+		this.add(this._end);
+		this.add(this._tempo);
+		this.add(this._voltar);
+	}
+	,goBack: function() {
+		var nextState = new MeuMenuState();
+		if(flixel_FlxG.game._state.switchTo(nextState)) {
+			flixel_FlxG.game._requestedState = nextState;
+		}
+	}
+	,update: function(elapsed) {
+		if(flixel_FlxG.mouse._leftButton.current == 2) {
+			var nextState = new MeuMenuState();
+			if(flixel_FlxG.game._state.switchTo(nextState)) {
+				flixel_FlxG.game._requestedState = nextState;
+			}
+		}
+		this._fogos -= elapsed;
+		if(this._fogos < 0) {
+			this._fogos = 0.5;
+			var s = new flixel_FlxSprite(0,0);
+			s.loadGraphic("assets/images/spritesheet.png",true,100,100);
+			s.setPosition(flixel_FlxG.random["int"](0,750),flixel_FlxG.random["int"](0,600));
+			s.animation.add("kabum",this.arr,30,false);
+			s.animation.play("kabum");
+			this.add(s);
+			var d = new flixel_FlxSprite(0,0);
+			d.loadGraphic("assets/images/spritesheet2.png",true,100,100);
+			d.setPosition(flixel_FlxG.random["int"](0,750),flixel_FlxG.random["int"](0,600));
+			d.animation.add("kabum",this.arr2,30,false);
+			d.animation.play("kabum");
+			this.add(d);
+		}
+		flixel_FlxState.prototype.update.call(this,elapsed);
+	}
+	,__class__: WinState
+});
 var Xml = function(nodeType) {
 	this.nodeType = nodeType;
 	this.children = [];
@@ -71125,7 +71360,7 @@ var lime_utils_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 628902;
+	this.version = 705036;
 };
 $hxClasses["lime.utils.AssetCache"] = lime_utils_AssetCache;
 lime_utils_AssetCache.__name__ = ["lime","utils","AssetCache"];
@@ -116402,7 +116637,9 @@ AssetPaths.tire__png = "assets/images/tire.png";
 AssetPaths.track_license__txt = "assets/images/track_license.txt";
 AssetPaths.orange_vehicle__png = "assets/images/orange_vehicle.png";
 AssetPaths.car_license__txt = "assets/images/car_license.txt";
+AssetPaths.spritesheet__png = "assets/images/spritesheet.png";
 AssetPaths.city__png = "assets/images/city.png";
+AssetPaths.spritesheet2__png = "assets/images/spritesheet2.png";
 AssetPaths.red_vehicle__png = "assets/images/red_vehicle.png";
 AssetPaths.Road__png = "assets/images/Road.png";
 AssetPaths.yellow_vehicle__png = "assets/images/yellow_vehicle.png";
@@ -116460,7 +116697,7 @@ Mensagem.OP_DANO = 0;
 Mensagem.OP_CURA = 1;
 PlayState.TILE_WIDTH = 100;
 PlayState.TILE_HEIGHT = 72;
-PlayState.QTD_INI = 3;
+PlayState.QTD_INI = 5;
 Xml.Element = 0;
 Xml.PCData = 1;
 Xml.CData = 2;

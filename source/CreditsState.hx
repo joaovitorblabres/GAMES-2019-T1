@@ -30,7 +30,7 @@ class CreditsState extends FlxState{
         _prog.velocity.y = -VELOCITY;
         _prog.alignment = CENTER;
 
-        _arte = new FlxText(0, 0, 0, "[ARTE]\n\nCarros\nCredit Racoon Media via\nLicense (Creative Commons Zero, CC0)\n\nPista\nVirgate Designs via\nLicense (Creative Commons Zero, CC-BY 3.0)\n\n\"Grama\"\nJoão Vitor Bruniera Labres\n", 10);
+        _arte = new FlxText(0, 0, 0, "[ARTE]\n\nCarros\nCredit Racoon Media via\nLicense (Creative Commons Zero, CC0)\n\nPneus e \"asfalto\": Google\n\n\"Grama\"\nJoão Vitor Bruniera Labres\n", 10);
         _arte.x = (FlxG.width/2)-(_arte.width / 2);
         _arte.y = _prog.y + _prog.height + 10;
         _arte.moves = true;
