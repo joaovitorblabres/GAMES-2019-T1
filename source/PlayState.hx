@@ -127,6 +127,7 @@ class PlayState extends FlxState{
 		FlxG.collide(_blocks, _bullets, onOverlapBlock);
 		FlxG.collide(_blocks, _enemyBullets, onOverlapBlock);
 		FlxG.overlap(_enemyBullets, _player, onOverlapDamages);
+		FlxG.overlap(_enemyBullets, _bullets, onOverlapTires);
 
 		for(i in 0...QTD_INI){
 			_inimigos[i].updateEm();
@@ -236,5 +237,10 @@ class PlayState extends FlxState{
 		m.op = Mensagem.OP_DANO;
 		m.data = a.dano;
 		_correio.send(m);
+	}
+
+	function onOverlapTires(a:Bala, b:Bala):Void{
+		a.kill();
+		b.kill();
 	}
 }

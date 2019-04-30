@@ -9,7 +9,7 @@ class Carro extends Entidade{
     public var municao:Int = 20;
     var _balas = new FlxTypedGroup<Bala>();
     var _velocity:FlxVector = new FlxVector();
-    public var delay:Int = FlxG.random.int(2,10);
+    public var delay:Int = FlxG.random.int(2,5);
     public var _counter:Float;
     var player:Int;
     public var tempo:Float = 0;

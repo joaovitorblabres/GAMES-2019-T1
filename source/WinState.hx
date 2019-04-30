@@ -2,12 +2,12 @@ package;
 
 import flixel.*;
 import flixel.text.FlxText;
-import flixel.group.FlxGroup;
+import flixel.ui.FlxButton;
 
 class WinState extends FlxState{
 
     var _end:FlxText;
-    var _voltar:FlxText;
+    var _voltar:FlxButton;
     var _tempo:FlxText;
     var _fogos:Float = 0.5;
     var tempo:Float = 40;
@@ -35,9 +35,9 @@ class WinState extends FlxState{
         _tempo.x = (FlxG.width/2)-(_tempo.width / 2);
         _tempo.y = _end.y + _end.height/2 + 2;
 
-        _voltar = new FlxText(0, 0, 0, "\nClique para voltar", 10);
-        _voltar.x = (FlxG.width/2)-(_voltar.width / 2);
-        _voltar.y = _end.y + _end.height + 10;
+        _voltar = new FlxButton(0, 0, "Voltar", goBack);
+        _voltar.x = (FlxG.width/2)-(_voltar.width/2);
+        _voltar.y = _tempo.y + _voltar.height + 10;
 
         add(_end);
         add(_tempo);
@@ -49,10 +49,6 @@ class WinState extends FlxState{
     }
 
     override public function update(elapsed:Float):Void{
-
-        if(FlxG.mouse.justPressed){
-            FlxG.switchState(new MeuMenuState());
-        }
         _fogos -= elapsed;
         if(_fogos < 0){
             _fogos = 0.5;
