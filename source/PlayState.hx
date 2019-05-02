@@ -161,7 +161,7 @@ class PlayState extends FlxState{
 			_player.S();
         }
 
-		if(FlxG.keys.pressed.R){
+		if(FlxG.keys.pressed.ENTER){
             playerReset();
         }
 		if(FlxG.mouse.justPressed && _player.municao > 0){

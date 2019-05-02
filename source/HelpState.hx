@@ -21,7 +21,7 @@ class HelpState extends FlxState{
         _comandos.x = (1*FlxG.width/6);
         _comandos.y = _help.y + 40;
 
-        _tiro = new FlxText(0, 0, 0, "\n\n\"SHOOT\":\nMOUSE - AIM\nMOUSE RIGHT CLICK - SHOOT", 15);
+        _tiro = new FlxText(0, 0, 0, "\n\n\"SHOOT\":\nMOUSE - AIM\nMOUSE LEFT CLICK - SHOOT", 15);
         _tiro.x = (3*FlxG.width/6);
         _tiro.y = _help.y + 40;
 
