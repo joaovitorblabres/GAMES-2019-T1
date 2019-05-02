@@ -1,6 +1,9 @@
 # GAMES-2019-T1
 ## Informações
 Trabalho desenvolvido no Sistema Operacional Linux Ubuntu 18.04.02 LTS via Visual Studio Code
+
+Pode-se executar via: https://joaovitorblabres.github.io/GAMES-2019-T1/
+
 ### Aluno
   João Vitor Bruniera Labres
 ### Matricula
